@@ -58,55 +58,82 @@ export default async function ImportProducts () {
         output: process.stdout,
         terminal: false
     })
-    rl.on('line',async function(line){
-        if (line.length > 1 ) {
-            const produto ={
+    rl.on('line', async function (line) {
+        if (line.length > 1) {
+            const produto = {
                 name: regexFilter(removeAcento(line.substring(produtosSubs.name.start, produtosSubs.name.end))),
                 barcode: regexFilter(line.substring(produtosSubs.barcode.start, produtosSubs.barcode.end)),
-                price: parseFloat(regexFilter(line.substring(produtosSubs.price.start, produtosSubs.price.end).replace(/\s/g, "")))/100  
-            }
-            
-            
-            if (!isNaN(produto.price ) || produto.name === null || produto.name === '') {
+                price: parseFloat(regexFilter(line.substring(produtosSubs.price.start, produtosSubs.price.end).replace(/\s/g, ""))) / 100
+            };
 
-                
+
+            if (!isNaN(produto.price) || produto.name === null || produto.name === '') {
+
+
                 const findProduct = await client.products.findFirst({
                     where: {
                         barcode: produto.barcode
-                    }  
-                })
+                    }
+                });
 
                 if (findProduct && findProduct.price != produto.price) {
-                    
-                    await client.products.update({
-                        where: {
-                            id: findProduct.id
-                        },
-                        data: {
-                            name: produto.name,
-                            price: produto.price
-                        }
-                    })
+                    try {
+                        console.log('produto atualizado');
+                        await client.products.update({
+                            where: {
+                                id: findProduct.id
+                            },
+                            data: {
+                                name: produto.name,
+                                price: produto.price
+                            }
+                        });
 
-                } else {
+                    } catch (error) {
+                        console.log(error);
+                        console.log(produto);
+                    }
 
-                    await client.products.create({
-                        data: {
-                            barcode: produto.barcode,
-                            name: produto.name,
-                            price: produto.price
-                        }
-                    })
+                } else if (!findProduct) {
+                    try {
+                        await client.products.create({
+                            data: {
+                                barcode: produto.barcode,
+                                name: produto.name,
+                                price: produto.price
+                            }
+                        });
+
+                    } catch (error) {
+                        console.log(error);
+                        console.log(produto);
+                    }
 
                 }
 
-                
-                
+
+
             }
-            
+
         }
-    
+
     })
+
+
+    try {
+        await client.interface_log.create({ 
+            data: {
+                barcode: '',
+                log: `Processamento concluido as ${new Date().toISOString()} ` 
+            }
+        });
+
+    } catch (error) {
+        console.log(error);
+    }
+    console.log('Processamento concluido')
+
+
 }
 
 

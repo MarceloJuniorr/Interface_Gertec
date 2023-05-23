@@ -25,3 +25,11 @@ model Products {
 
   @@map("products")
 }
+
+model interface_log {
+  id String @id @unique @default(uuid())
+  barcode String
+  log String
+  
+  @@map("interface_log")
+}
